@@ -25,8 +25,8 @@ function main() {
   document.getElementById('result').innerText += '震央の確からしさ　' + eew.accuracyEpicenter + '\n';  
   document.getElementById('result').innerText += '震源の深さの確からしさ　' + eew.accuracyDepth + '\n';  
   document.getElementById('result').innerText += 'マグニチュードの確からしさ　' + eew.magnitudeCalculation + '\n';  
-  //document.getElementById('result').innerText += 'マグニチュード使用観測点　' + eew.numberOfMagnitudeCalculation + '\n';  
-  //document.getElementById('result').innerText += '震源の確からしさ　' + eew.accuracyHypocenter + '\n'; 
+  document.getElementById('result').innerText += 'マグニチュード使用観測点　' + eew.numberOfMagnitudeCalculation + '\n';  
+  document.getElementById('result').innerText += '震源の確からしさ　' + eew.accuracyHypocenter + '\n'; 
   document.getElementById('result').innerText += '震央位置の海陸判定　' + eew.landOrSea + '\n';
   document.getElementById('result').innerText += '警報発表対象の識別符　' + eew.warn + '\n';
   document.getElementById('result').innerText += '最大予測震度の変化　' + eew.maxIntChange + '\n';
@@ -67,7 +67,8 @@ function decode(data) {
     '38': 'テスト電文',
     '39': 'キャンセル（取り消し）情報',
     '47': '一般向け緊急地震速報',
-    '48': 'キャンセル報'
+    '48': 'キャンセル報',
+    '61': 'リアルタイム震度'
   }[data[0]];
 
   eew.office = {
@@ -502,7 +503,7 @@ function decode(data) {
   eew.intensity = toIntensity(data[15]);
 
   eew.accuracyEpicenter = {
-    '1': 'P波／S波レベル越え、またはIPF法（1点）',
+    '1': 'P波／S波レベル越え、IPF法（1点）、または仮定震源要素',
     '2': 'IPF法（2点）',
     '3': 'IPF法（3点／4点）',
     '4': 'IPF法（5点以上）',
@@ -515,7 +516,7 @@ function decode(data) {
   }[data[16].substr(2, 1)];
 
   eew.accuracyDepth = {
-    '1': 'P波／S波レベル越え、またはIPF法（1点）',
+    '1': 'P波／S波レベル越え、IPF法（1点）、または仮定震源要素',
     '2': 'IPF法（2点）',
     '3': 'IPF法（3点／4点）',
     '4': 'IPF法（5点以上）',
@@ -528,24 +529,22 @@ function decode(data) {
   }[data[16].substr(3, 1)];
 
   eew.magnitudeCalculation = {
-    '1': '未定義',
     '2': '防災科研システム〔防災科学技術研究所データ〕',
     '3': '全点P相',
     '4': 'P相／全相混在',
     '5': '全点全相',
     '6': 'EPOS',
-    '7': '未定義',
-    '8': 'P波／S波レベル越え',
+    '8': 'P波／S波レベル越え、または仮定震源要素',
     '9': '予備',
     '/': '不明、未設定、キャンセル'
   }[data[16].substr(4, 1)];
   
   eew.numberOfMagnitudeCalculation = {
-    '1': 'P波／S波レベル越え、またはIPF法（1点）',
-    '2': 'IPF法（2点）',
-    '3': 'IPF法（3点）',
-    '4': 'IPF法（4点）',
-    '5': 'IPF法（5点）',
+    '1': '1点、P波／S波レベル越え、または仮定震源要素',
+    '2': '2点',
+    '3': '3点',
+    '4': '4点',
+    '5': '5点以上',
     '6': '未使用',
     '7': '未使用',
     '8': '未使用',
@@ -554,22 +553,22 @@ function decode(data) {
   }[data[16].substr(5, 1)];
 
   eew.accuracyHypocenter = {
-    '1': 'P波／S波レベル越え、またはIPF法（1点）',
+    '1': 'P波／S波レベル越え、IPF法（1点）、または仮定震源要素',
     '2': 'IPF法（2点）',
-    '3': 'IPF法（3点/4点）',
+    '3': 'IPF法（3点／4点）',
     '4': 'IPF法（5点以上）',
     '5': '未使用',
     '6': '未使用',
     '7': '未使用',
     '8': '未使用',
-    '9': '未使用',
+    '9': '震源とマグニチュードに基づく震度予測手法の精度が最終報相当',
     '/': '不明、未設定、キャンセル'
   }[data[16].substr(6, 1)];
 
   eew.landOrSea = {
-    '0': '陸域',
+    '0': '内陸',
     '1': '海域',
-    '/': '不明、未設定、キャンセル'
+    '/': '不明、未設定、キャンセル、または仮定震源要素'
   }[data[17].substr(2, 1)];
 
   eew.warn = {
@@ -577,6 +576,11 @@ function decode(data) {
     '1': '警報',
     '/': '不明、未設定、キャンセル'
   }[data[17].substr(3, 1)];
+
+  eew.prediction = {
+    '9': '震源とマグニチュードによる震度推定手法において震源要素が推定できず、PLUM法による震度予測のみが有効',
+    '/': '不明、未設定、キャンセル'
+  }[data[17].substr(4, 1)]
 
   eew.maxIntChange = {
     '0': 'ほとんど変化なし',
@@ -591,6 +595,7 @@ function decode(data) {
     '2': '主として震央位置が変化したため（10.0km以上）',
     '3': 'Ｍ及び震央位置が変化したため（1と2の複合条件）',
     '4': '震源の深さが変化したため（上記のいずれにもあてはまらず、30.0km以上変化）',
+    '9': 'PLUM法による予測により変化したため',
     '/': '不明、未設定、キャンセル'  
   }[data[18].substr(3, 1)];
   
@@ -816,6 +821,7 @@ function decode(data) {
     eew.ebi.push({
       '0': '未到達',
       '1': '既に到達と予測',
+      '9': '主要動到達時刻の予測なし（PLUM法による予測）',
       '/': '不明または未設定'
     }[data[i + 3].substr(1, 1)]);
   }
